@@ -82,20 +82,20 @@ def test_datarange1d_init_with_bad_bounds():
 # ------------------------
 
 def test_factorrange_init_with_positional_arguments():
-    factor_range = FactorRange(1, 2)
-    assert factor_range.factors == [1, 2]
+    factor_range = FactorRange("a", "b")
+    assert factor_range.factors == ["a", "b"]
 
 
 def test_factorrange_init_with_keyword_arguments():
-    factor_range = FactorRange(factors=[1, 2, 3, 4, 5])
-    assert factor_range.factors == [1, 2, 3, 4, 5]
+    factor_range = FactorRange(factors=["a", "b", "c", "d", "e"])
+    assert factor_range.factors == ["a", "b", "c", "d", "e"]
 
 
 def test_factorrange_cannot_initialize_with_both_keyword_and_positional_arguments():
     with pytest.raises(ValueError):
-        Range1d([1, 2, 3], factors=[1, 2, 3])
+        Range1d(["a", "b", "c"], factors=["a", "b", "c"])
 
 
 def test_factorrange_cannot_initialize_with_list_as_positional_argument():
     with pytest.raises(ValueError):
-        FactorRange([1, 2, 3, 4])
+        FactorRange(["a", "b", "c" "d"])
