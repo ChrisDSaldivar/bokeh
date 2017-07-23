@@ -229,6 +229,10 @@ class FactorRange(Range):
     range.
     """)
 
+    factor_padding = Float(default=0.0, help="""
+
+    """)
+
     start = Float(readonly=True, help="""
 
     """)

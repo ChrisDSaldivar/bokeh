@@ -1,9 +1,10 @@
 import {Range} from "./range"
 import * as p from "core/properties"
 import {all, sum} from "core/util/array"
+import {keys} from "core/util/object"
 import {isArray, isNumber, isString} from "core/util/types"
 
-_map_one = (factors) ->
+_map_one = (factors, padding) ->
   mapping = {}
 
   for f, i in factors
@@ -11,42 +12,47 @@ _map_one = (factors) ->
       throw new Error("")
     if f of mapping
       throw new Error("")
-    mapping[f] = {value: 0.5 + i}
+    mapping[f] = {value: 0.5 + i*(1+padding)}
 
-  return mapping
+  return [mapping, (factors.length-1)*padding]
 
-_map_two = (factors) ->
-  tmp = {}
+_map_two = (factors, padding) ->
+  tops = {}
   mapping = {}
 
   for [f0, f1], i in factors
     if f0 == null
       throw new Error("")
 
-    if f0 not of tmp
-      tmp[f0] = []
-    tmp[f0].push(0.5 + i)
+    if f0 not of tops
+      tops[f0] = []
+    tops[f0].push(0.5 + i*(1+padding))
+
+  seen = {}
 
   for [f0, f1], i in factors
+    seen[f0] = 1
     if f0 not of mapping
-      avg = sum(tmp[f0]) / tmp[f0].length
+      avg = sum(tops[f0]) / tops[f0].length
       mapping[f0] = {value: avg, mapping: {}}
 
     if f1 of mapping[f0].mapping
       throw new Error("")
 
     if f1 != null
-      mapping[f0].mapping[f1] = {value: 0.5 + i}
+      n = keys(seen).length - 1
+      mapping[f0].mapping[f1] = {value: 0.5 + i + n*padding}
 
-  return mapping
+  return [mapping, (keys(seen).length - 1)*padding]
 
 export class FactorRange extends Range
   type: 'FactorRange'
 
   @define {
-    factors: [ p.Array,  [] ]
-    start:   [ p.Number     ]
-    end:     [ p.Number     ]
+    factors:          [ p.Array,  [] ]
+    factor_padding: [ p.Number, 0  ]
+    start:            [ p.Number     ]
+    end:              [ p.Number     ]
   }
 
   @getters {
@@ -83,18 +89,19 @@ export class FactorRange extends Range
     result = (@synthetic(x) for x in xs)
 
   _init: () ->
-    start = 0
-    end = @factors.length
-    @setv({start: start, end: end}, {silent: true})
 
     if all(@factors, isString)
-      @_mapping = _map_one(@factors)
+      [@_mapping, inside_padding] = _map_one(@factors, @factor_padding)
 
     else if all(@factors, (x) -> isArray(x) and x.length==2)
-      @_mapping = _map_two(@factors)
+      [@_mapping, inside_padding] = _map_two(@factors, @factor_padding)
 
     else
       throw new Error("")
+
+    start = 0
+    end = @factors.length + inside_padding
+    @setv({start: start, end: end}, {silent: true})
 
   _lookup: (x) ->
     if x.length == 1
